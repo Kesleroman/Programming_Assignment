@@ -1,8 +1,9 @@
 const https = require('https')
-const fs = require ('fs')
-const nodemailer = require('nodemailer');
+const fs = require ('fs')                 // Working with files
+const nodemailer = require('nodemailer'); // Sending emails
 
 const myMail = 'slonsky.roman@gmail.com'
+const emailFile = './listOfEmails'
 
 var transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -41,8 +42,8 @@ function getTheJoke() {
   req.end()
 }
 
-function chuckSaysJoke(){
-  getTheJoke()
+async function chuckSaysJoke(){
+  await getTheJoke()
 
   const data = fs.readFileSync('/tmp/joke.json')
   const obj = JSON.parse(data)
@@ -69,30 +70,56 @@ function sendEmail(data){
   })
 }
 
-function start(){
+function printOutEmailList(){
+  try {
+    data = fs.readFileSync(emailFile)
+    if (data.length == 0)
+      console.log('File is empty.')
+    else
+      console.log(data.toString())
+  } catch (err) {
+      console.log('File does not exist.')
+      console.error(err)
+  }
+}
 
-  console.log('Hello. This app allows you to get jokes exactly from Chuck Norris and' +
+function addEmail(){
+  readline.question(`Enter an email of your friend: `, (email) => {
+    fs.writeFileSync(emailFile, email + '\n', {encoding : 'utf8',
+				               mode: 0o666,
+                                               flag: 'a'})
+  })
+}
+
+async function start(){
+
+  console.log('Hello. This app allows you to get jokes exactly from Chuck Norris and\n' +
               'send jokes to your friends\' emails. Type \'help\' to see commands.')
 
-  readline.on('line', (line) => {
-    switch(line){
+  readline.on('line', async (line) => {
+    switch (line.toLowerCase()){
       case 'help':
-        console.log('joke - Chuck generates a joke and says it to standard output.'+
+        console.log('joke - Chuck generates a joke and says it to standard output.\n'+
+                    'emails - prints a list of your friends.\n' +
+		    'add email - adds email to a list.\n' +
                     'exit - stops the program.')
         break
       case 'joke':
-         joke = chuckSaysJoke()
-         console.log(joke)
-         break
+        joke = await chuckSaysJoke()
+        console.log('Chuck says: ' + joke)
+        break
+      case 'emails':
+	printOutEmailList()
+        break
+      case 'add email':
+	addEmail()
+	break
       case 'exit':
-        exit()
+        process.exit()
       default:
         console.log('%s is an unknown command.', line)
     }
-  });
-
-  //sendEmail(joke)
-  //process.exit()
+  })
 }
 
 start()
