@@ -85,7 +85,6 @@ function printOutEmailList(){
       console.log(data.toString())
   } catch (err) {
       console.log('File does not exist.')
-      console.error(err)
   }
 }
 
@@ -94,6 +93,32 @@ function addEmail(){
     fs.writeFileSync(emailFile, email + '\n', {encoding : 'utf8',  //default
 				               mode: 0o666,        //default
                                                flag: 'a'})         //append
+    console.log('Email has been added.')
+  })
+}
+
+function deleteEmail(){
+  readline.question('Enter an email which you wand to delete: ', (email) => {
+    try {
+      data = fs.readFileSync(emailFile)
+      if (data.length == 0){
+        console.log('File is empty')
+        return
+      }
+
+      data = data.toString()
+      pos = data.search(email)
+      if (pos == -1) {
+        console.log('There\'s no such an email.')
+        return
+      }
+
+      data = data.slice(0, pos) + data.slice(pos + email.length+1, data.length)
+      fs.writeFileSync(emailFile, data)
+      console.log('Email has been deleted.')
+    } catch (err){
+        console.log('File does not exist.')
+    }
   })
 }
 
@@ -103,7 +128,7 @@ exports.start = async function (){
               'send jokes to your friends\' emails. Type \'help\' to see commands.')
 
   readline.on('line', async (line) => {
-    switch (line.toLowerCase()){
+    switch (line.toLowerCase().trim()){
       case 'help':
         console.log('joke - Chuck generates a joke and says it to standard output.\n'+
                     'emails - prints a list of your friends.\n' +
@@ -118,8 +143,11 @@ exports.start = async function (){
       case 'emails':
 	printOutEmailList()
         break
-      case 'add email':
-	addEmail()
+     case 'add email':
+        addEmail()
+        break
+      case 'delete email':
+	deleteEmail()
 	break
       case 'send email':
         joke = await chuckSaysJoke()
