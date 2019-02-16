@@ -1,24 +1,11 @@
 const https = require('https')
 const fs = require ('fs')                 // Working with files
-const nodemailer = require('nodemailer'); // Sending emails
-
-const myMail = 'slonsky.roman@gmail.com'
-const emailFile = './listOfEmails'
-
-var transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: myMail,
-    pass: ''
-  }
-})
-
-// module for input/output
-const readline = require('readline').createInterface({
+const nodemailer = require('nodemailer') // Sending emails
+const readline = require('readline').createInterface({  // module for input/output
   input: process.stdin,
   output: process.stdout
 })
-
+const emailFile = './listOfEmails'
 const jokeSource = {
   hostname: 'api.chucknorris.io',
   port: 443,
@@ -53,20 +40,39 @@ async function chuckSaysJoke(){
 }
 
 function sendEmail(data){
+  console.log('Warning! Your email must be from Gmail.\nAnd to be able to send emails you need to let less secure apps access your account.\n')
+  readline.question('From: ', email => {
+      readline.question('Password: ', passwd => {
+        var mailOptions = {
+          from: email,
+          to: '',
+      	  subject: 'Chuck jokes',
+      	  text: data
+        }
+        var transporter = nodemailer.createTransport({
+  	  service: 'gmail',
+  	  auth: {
+    	    user: email,
+    	    pass: passwd
+  	  }
+	})
 
-  var mailOptions = {
-    from: myMail,
-    to: myMail,
-    subject: 'Sending Email using Node.js',
-    text: data
-  }
+        const rl = require('readline').createInterface({
+  	  input: fs.createReadStream(emailFile),
+	})
 
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.log(error);
-    } else {
-      console.log('Email sent: ' + info.response);
-    }
+	//Reads every email from a file of emails and send a joke to them.
+	rl.on('line', (line) => {
+          mailOptions.to = line
+          transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+      	      console.log(error);
+    	    } else {
+      	      console.log('Email sent: ' + info.response);
+    	    }
+          })
+	})
+      })
   })
 }
 
@@ -85,9 +91,9 @@ function printOutEmailList(){
 
 function addEmail(){
   readline.question(`Enter an email of your friend: `, (email) => {
-    fs.writeFileSync(emailFile, email + '\n', {encoding : 'utf8',
-				               mode: 0o666,
-                                               flag: 'a'})
+    fs.writeFileSync(emailFile, email + '\n', {encoding : 'utf8',  //default
+				               mode: 0o666,        //default
+                                               flag: 'a'})         //append
   })
 }
 
@@ -101,7 +107,8 @@ async function start(){
       case 'help':
         console.log('joke - Chuck generates a joke and says it to standard output.\n'+
                     'emails - prints a list of your friends.\n' +
-		    'add email - adds email to a list.\n' +
+		    'add email - adds email to a list of emails.\n' +
+	            'send email - sends joke to emails that are in a file \'listOfEmails\'.\n' +
                     'exit - stops the program.')
         break
       case 'joke':
@@ -114,6 +121,10 @@ async function start(){
       case 'add email':
 	addEmail()
 	break
+      case 'send email':
+        joke = await chuckSaysJoke()
+        sendEmail(joke)
+        break
       case 'exit':
         process.exit()
       default:
