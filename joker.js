@@ -97,7 +97,7 @@ function addEmail(){
   })
 }
 
-async function start(){
+exports.start = async function (){
 
   console.log('Hello. This app allows you to get jokes exactly from Chuck Norris and\n' +
               'send jokes to your friends\' emails. Type \'help\' to see commands.')
@@ -132,5 +132,3 @@ async function start(){
     }
   })
 }
-
-start()
